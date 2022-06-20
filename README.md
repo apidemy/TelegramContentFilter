@@ -46,7 +46,7 @@ Use this at your own risk. I will not be responsible for any kind of issue while
 ### Host Locally:
 ```sh
 git clone https://github.com/apidemy/TelegramContentFilter.git
-cd Forward-Client
+cd TelegramContentFilter
 pip3 install -r requirements.txt
 # Setup Configurations in configs.py file!
 python3 main.py
