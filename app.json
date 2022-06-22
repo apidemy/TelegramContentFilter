@@ -11,7 +11,7 @@
     "repository": "https://github.com/apidemy/Forward-Client.git",
     "website": "https://telegram.dog/ScalpFutures",
     "success_url": "https://t.me/Discovery_Updates",
-    "stack": "heroku-20",
+    "stack": "heroku-22",
     "env": {
         "API_ID": {
             "description": "Get this value from my.telegram.org or @TeleORG_Bot"
