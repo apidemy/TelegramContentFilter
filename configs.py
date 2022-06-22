@@ -28,6 +28,7 @@ class Config(object):
     # Sleep Time while Kang
     SLEEP_TIME = int(os.environ.get("SLEEP_TIME", 10))
     DATABASE_URL = os.environ.get('DATABASE_URL', None)
+    DATABASE_URL = DATABASE_URL.replace("postgres", "postgresql")
     # Heroku Management
     HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY")
     HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")
