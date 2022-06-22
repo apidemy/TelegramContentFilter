@@ -10,13 +10,6 @@ class MessageIdMap(BASE):
     destination_id = Column(BigInteger, unique=True)
     id = Column(Integer, unique=True)
 
-    # def __init__(self, user_id, channels=None):
-    #     self.user_id = user_id
-    #     self.channels = channels
-
-    # def __repr__(self):
-    # return "<MessageIdMap(source__id='%s', destination_id='%s')>" % (self.source__id, self.destination_id)
-
 
 MessageIdMap.__table__.create(checkfirst=True)
 
@@ -24,7 +17,7 @@ MessageIdMap.__table__.create(checkfirst=True)
 async def get_message_map(msg_source_id):
     try:
         return SESSION.query(MessageIdMap.destination_id).filter_by(
-            source__id=msg_source_id).first()
+            source__id=msg_source_id).one()
     except:
         SESSION.rollback()
         raise
@@ -34,8 +27,9 @@ async def get_message_map(msg_source_id):
 
 async def add_message_map(msg_source_id, msg_destination_id):
     try:
-        message_map = {MessageIdMap.source__id: msg_source_id,
-                       MessageIdMap.destination_id: msg_destination_id}
+        message_map = MessageIdMap()
+        message_map.source__id = msg_source_id
+        message_map.destination_id = msg_destination_id
         SESSION.add(message_map)
         SESSION.commit()
     except:

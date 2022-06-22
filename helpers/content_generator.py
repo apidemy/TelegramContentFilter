@@ -33,8 +33,6 @@ async def ContentGenerator(client: Client, msg: Message):
             print("Info: CheckFileSize not passed. " +
                   time.strftime('%Y-%m-%d %H:%M:%S'))
             return 400
-        # Set a delay
-        await asyncio.sleep(random.randint(1, 2))
         is_reply_message = False
         ## --- Check 4 --- ##
         signal_pattern = '(?s).*\.\.\.\s([A-Za-z0-9]+)\s\.\.\.(?s).*𝓓𝓲𝓻𝓮𝓬𝓽𝓲𝓸𝓷\s:\s(SHORT|LONG)' \
@@ -53,21 +51,24 @@ async def ContentGenerator(client: Client, msg: Message):
                 return 600  # No targets found
             direction_symbol = " 🟢" if signal_match.group(
                 2) == "LONG" else " 🔴"
-            new_message = "$$$📡Futures Scalping📡$$$\n\n"\
+            leverage = signal_match.group(3)
+            if "Cross 20x" in leverage:
+                leverage = "Leverage : Cross 5x"
+            new_message = "💸📡Futures Scalping📡💸\n\n"\
                 "Coin : " + signal_match.group(1) + \
                 "\nDirection : " + signal_match.group(2) + direction_symbol + \
-                "\n" + signal_match.group(3) + \
+                "\n" + leverage + \
                 "\n" + signal_match.group(4) + \
                 "\n\n" + signal_match.group(5) + \
-                "\n\n❗️ SCALPING ❗️" \
+                "\n\n SCALPING " \
                 "\n" + targets[0] + \
                 "\n" + targets[1] + \
                 "\n" + targets[2] + \
-                "\n❗️ DAY TRADING ❗️" \
+                "\n⚠️ DAY TRADING ⚠️" \
                 "\n" + targets[3] + \
                 "\n" + targets[4] + \
                 "\n" + targets[5] + \
-                "\n❗️ SWING TRADING ❗️" \
+                "\n⚠️⚠️ SWING TRADING ⚠️⚠️" \
                 "\n" + targets[6] + \
                 "\n" + targets[7]
         elif msg.reply_to_message and msg.reply_to_message.message_id:
@@ -89,8 +90,8 @@ async def ContentGenerator(client: Client, msg: Message):
             try:
                 if is_reply_message:
                     msg_id = await get_message_map(msg.reply_to_message.message_id)
-                    if msg_id:
-                        await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message, reply_to_message_id=msg_id)
+                    if msg_id and msg_id[0]:
+                        await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message, reply_to_message_id=msg_id[0])
                     else:
                         print("Info: Reply ID Not Found. " +
                               time.strftime('%Y-%m-%d %H:%M:%S'))
@@ -105,10 +106,10 @@ async def ContentGenerator(client: Client, msg: Message):
                           time.strftime('%Y-%m-%d %H:%M:%S'))
             except FloodWait as e:
                 await asyncio.sleep(e.x)
-                await client.send_message(chat_id="me", text=f"#FloodWait: Stopped Forwarder for `{e.x}s`!")
+                await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")
                 await asyncio.sleep(Config.SLEEP_TIME)
                 await ContentGenerator(client, msg)
             except Exception as err:
-                await client.send_message(chat_id="me", text=f"#Error: `{err}`\n\nUnable to Forward Message to `{str(Config.FORWARD_TO_CHAT_ID[i])}`")
+                await client.send_message(chat_id="me", text=f"#Error: `{err}`\n\nUnable to Send Message to `{str(Config.FORWARD_TO_CHAT_ID[i])}`")
     except Exception as err:
         await client.send_message(chat_id="me", text=f"#ERROR: `{err}`")

@@ -3,13 +3,14 @@ import sys
 import time
 import random
 import asyncio
-from pyrogram import Client, filters
+from pyrogram import Client, filters, idle
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
 from configs import Config
 from helpers.kanger import Kanger
-from helpers.ContentGenerator import ContentGenerator
+from helpers.content_generator import ContentGenerator
 # from helpers.forwarder import ForwardMessage
+from pyrogram.errors import ApiIdInvalid, ApiIdPublishedFlood
 
 User = Client(session_name=Config.STRING_SESSION,
               api_hash=Config.API_HASH, api_id=Config.API_ID)
@@ -74,4 +75,17 @@ async def main(client: Client, message: Message):
             print(str(message_sent))
             return
 
-User.run()
+# Run User Bot
+if __name__ == "__main__":
+    try:
+        User.start()
+    except (ApiIdInvalid, ApiIdPublishedFlood):
+        raise Exception("Your API_ID/API_HASH is not valid.")
+    except:
+        print("Exeption: Cannot run app")
+        raise
+    uname = User.get_me().username
+    print(f"@{uname} Started Successfully!")
+    idle()
+    User.stop()
+    print("Bot stopped!")
