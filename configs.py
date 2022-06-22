@@ -27,6 +27,7 @@ class Config(object):
     FORWARD_AS_COPY = bool(os.environ.get("FORWARD_AS_COPY", True))
     # Sleep Time while Kang
     SLEEP_TIME = int(os.environ.get("SLEEP_TIME", 10))
+    DATABASE_URL = os.environ.get('DATABASE_URL', None)
     # Heroku Management
     HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY")
     HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME")

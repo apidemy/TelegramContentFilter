@@ -9,8 +9,7 @@ from pyrogram.errors import FloodWait
 from helpers.filters import FilterMessage
 from helpers.file_size_checker import CheckFileSize
 from helpers.block_exts_handler import CheckBlockedExt
-
-messages_map_id = {}
+from database.messages_sql import get_message_map, add_message_map
 
 
 async def ContentGenerator(client: Client, msg: Message):
@@ -89,16 +88,16 @@ async def ContentGenerator(client: Client, msg: Message):
         for i in range(len(Config.FORWARD_TO_CHAT_ID)):
             try:
                 if is_reply_message:
-                    if msg.reply_to_message.message_id in messages_map_id.keys():
-                        msg_id = messages_map_id[msg.reply_to_message.message_id]
+                    msg_id = await get_message_map(msg.reply_to_message.message_id)
+                    if msg_id:
                         await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message, reply_to_message_id=msg_id)
                     else:
                         print("Info: Reply ID Not Found. " +
                               time.strftime('%Y-%m-%d %H:%M:%S'))
-                    return 700
+                    return
                 sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message)
                 if sent:
-                    messages_map_id[msg.message_id] = sent.message_id
+                    await add_message_map(msg.message_id, sent.message_id)
                     print("Info: Message Sent. " +
                           time.strftime('%Y-%m-%d %H:%M:%S'))
                 else:
