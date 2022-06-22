@@ -43,9 +43,6 @@
             "description": "Value can be `True`/`False`. If `True` those files which doesn't have file extension will not be Forwarded.",
             "required": false
         },
-        "DATABASE_URL": {
-            "description": "Your postgres database url"
-        },
         "HEROKU_API_KEY": {
             "description": "Put Heroku API Key from https://dashboard.heroku.com/account"
         },
@@ -67,5 +64,13 @@
             "quantity": 1,
             "size": "free"
         }
-    }
+    },
+    "addons": [
+        {
+            "options": {
+                "version": "12"
+            },
+            "plan": "heroku-postgresql"
+        }
+    ]
 }
