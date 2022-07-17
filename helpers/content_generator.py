@@ -1,5 +1,4 @@
 import re
-import random
 import datetime
 import asyncio
 from configs import Config
@@ -9,7 +8,7 @@ from pyrogram.errors import FloodWait
 from helpers.filters import FilterMessage
 from helpers.file_size_checker import CheckFileSize
 from helpers.block_exts_handler import CheckBlockedExt
-from database.messages_sql import get_message_map, add_message_map
+from database.messages_sql import add_edited_message_map, get_edited_message_map, get_message_map, add_message_map
 
 
 async def ContentGenerator(client: Client, msg: Message):
@@ -89,12 +88,19 @@ async def ContentGenerator(client: Client, msg: Message):
         for i in range(len(Config.FORWARD_TO_CHAT_ID)):
             try:
                 if is_reply_message:
-                    msg_id = await get_message_map(msg.reply_to_message.message_id)
-                    if msg_id and msg_id[0]:
-                        await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message, reply_to_message_id=msg_id[0])
+                    if msg.edit_date:
+                        msg_id = await get_edited_message_map(msg.message_id)
+                        if msg_id and msg_id[0]:
+                            await client.edit_message_text(chat_id=Config.FORWARD_TO_CHAT_ID[i], message_id=msg_id[0], text=msg.text)
                     else:
-                        print("Info: Reply ID Not Found. " +
-                              time.strftime('%Y-%m-%d %H:%M:%S'))
+                        msg_id = await get_message_map(msg.reply_to_message.message_id)
+                        if msg_id and msg_id[0]:
+                            sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message, reply_to_message_id=msg_id[0])
+                            if sent:
+                                await add_edited_message_map(msg.message_id, sent.message_id)
+                        else:
+                            print("Info: Reply ID Not Found. " +
+                                  time.strftime('%Y-%m-%d %H:%M:%S'))
                     return
                 sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message)
                 if sent:
