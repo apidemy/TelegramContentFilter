@@ -64,10 +64,10 @@ async def main(client: Client, message: Message):
     elif message.chat.id in Config.FORWARD_FROM_CHAT_ID:
         # Check if the message exist for atleast two seconds
         print("Message Received....")
-        await asyncio.sleep(random.randint(2, 3))
-        print("Checking if exist....")
+        await asyncio.sleep(random.randint(3, 4))
+        # print("Checking if exist....")
         is_still_exist = await client.get_messages(message.chat.id, message.message_id)
-        if not is_still_exist.text:
+        if not is_still_exist.text and message.date == is_still_exist.date:
             return  # Message has been removed or does not exist anymore
         message_sent = await ContentGenerator(client, message)
         if message_sent:

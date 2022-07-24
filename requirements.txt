@@ -1,5 +1,12 @@
-psycopg2==2.9.3
-SQLAlchemy==1.4.37
+charset-normalizer==2.0.12
+heroku3==5.1.4
+pyaes==1.6.1
 Pyrogram==1.4.16
-TgCrypto
-heroku3
+PySocks==1.7.1
+python-dateutil==2.8.2
+requests==2.28.0
+six==1.16.0
+SQLAlchemy==1.4.37
+TgCrypto==1.2.3
+toml==0.10.2
+urllib3==1.26.9
