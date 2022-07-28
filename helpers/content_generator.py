@@ -1,6 +1,8 @@
 import re
-import datetime
 import asyncio
+import logging
+import random
+from hashlib import sha1
 from configs import Config
 from pyrogram import Client
 from pyrogram.types import Message
@@ -8,30 +10,28 @@ from pyrogram.errors import FloodWait
 from helpers.filters import FilterMessage
 from helpers.file_size_checker import CheckFileSize
 from helpers.block_exts_handler import CheckBlockedExt
-from database.messages_sql import add_edited_message_map, get_edited_message_map, get_message_map, add_message_map
+from database.messages_sql import add_edited_message_map, add_message_hash, message_hash_exist, get_edited_message_map, get_message_map, add_message_map
+
+logger = logging.getLogger(__name__)
 
 
 async def ContentGenerator(client: Client, msg: Message):
     try:
         ## --- Check 1 --- ##
-        time = datetime.datetime.now()
         can_forward = await FilterMessage(message=msg)
         if can_forward == 400:
-            print("Info: FilterMessage not passed. " +
-                  time.strftime('%Y-%m-%d %H:%M:%S'))
-            return 100
+            logger.info("FilterMessage not passed.")
+            return
         ## --- Check 2 --- ##
         has_blocked_ext = await CheckBlockedExt(event=msg)
         if has_blocked_ext is True:
-            print("Info: CheckBlockedExt not passed. " +
-                  time.strftime('%Y-%m-%d %H:%M:%S'))
-            return 400
+            logger.info("CheckBlockedExt not passed.")
+            return
         ## --- Check 3 --- ##
         file_size_passed = await CheckFileSize(msg=msg)
         if file_size_passed is False:
-            print("Info: CheckFileSize not passed. " +
-                  time.strftime('%Y-%m-%d %H:%M:%S'))
-            return 400
+            logger.info("CheckFileSize not passed.")
+            return
         is_reply_message = False
         ## --- Check 4 --- ##
         signal_pattern = '(?s).*\.\.\.\s([A-Za-z0-9]+)\s\.\.\.(?s).*𝓓𝓲𝓻𝓮𝓬𝓽𝓲𝓸𝓷\s:\s(SHORT|LONG)' \
@@ -47,7 +47,7 @@ async def ContentGenerator(client: Client, msg: Message):
             targets_pattern = '(Target\s\d\s-\s\d+\.?\d*)'
             targets = re.findall(targets_pattern, msg.text)
             if len(targets) == 0:
-                return 600  # No targets found
+                return  # No targets found
             direction_symbol = " 🟢" if signal_match.group(
                 2) == "LONG" else " 🔴"
             leverage = signal_match.group(3)
@@ -77,13 +77,14 @@ async def ContentGenerator(client: Client, msg: Message):
                 new_message = reply_match.group(1)
                 is_reply_message = True
             else:
-                print("Info: Reply pattern failed. " +
-                      time.strftime('%Y-%m-%d %H:%M:%S'))
-                return 400
+                logger.info("Reply pattern failed.")
+                return
         else:
-            print("Info: Not related message. " +
-                  time.strftime('%Y-%m-%d %H:%M:%S'))
-            return 400
+            logger.info("Not related message.")
+            return
+
+        # Small Delay
+        await asyncio.sleep(random.randint(2, 3))
 
         for i in range(len(Config.FORWARD_TO_CHAT_ID)):
             try:
@@ -99,17 +100,21 @@ async def ContentGenerator(client: Client, msg: Message):
                             if sent:
                                 await add_edited_message_map(msg.message_id, sent.message_id)
                         else:
-                            print("Info: Reply ID Not Found. " +
-                                  time.strftime('%Y-%m-%d %H:%M:%S'))
+                            logger.info("Reply ID Not Found.")
+                    return
+                # Check if we added this message recently
+                msg_hash = sha1(msg.text.encode("utf-8")).hexdigest()
+                msg_added = await message_hash_exist(msg_hash)
+                if msg_added:
+                    logger.info("Already added.")
                     return
                 sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message)
                 if sent:
                     await add_message_map(msg.message_id, sent.message_id)
-                    print("Info: Message Sent. " +
-                          time.strftime('%Y-%m-%d %H:%M:%S'))
+                    await add_message_hash(msg_hash)
+                    logger.info("Message Sent.")
                 else:
-                    print("Info: Message Not Sent. " +
-                          time.strftime('%Y-%m-%d %H:%M:%S'))
+                    logger.info("Message Not Sent.")
             except FloodWait as e:
                 await asyncio.sleep(e.x)
                 await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")
