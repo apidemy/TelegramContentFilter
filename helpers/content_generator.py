@@ -1,7 +1,6 @@
 import re
 import asyncio
 import logging
-import random
 from hashlib import sha1
 from configs import Config
 from pyrogram import Client
@@ -10,7 +9,7 @@ from pyrogram.errors import FloodWait
 from helpers.filters import FilterMessage
 from helpers.file_size_checker import CheckFileSize
 from helpers.block_exts_handler import CheckBlockedExt
-from database.messages_sql import add_edited_message_map, add_message_hash, message_hash_exist, get_edited_message_map, get_message_map, add_message_map
+from database.messages_sql import add_edited_message_map, get_edited_message_map, get_message_map, add_message_map, is_message_exist
 
 logger = logging.getLogger(__name__)
 
@@ -83,44 +82,39 @@ async def ContentGenerator(client: Client, msg: Message):
             logger.info("Not related message.")
             return
 
-        # Small Delay
-        await asyncio.sleep(random.randint(2, 3))
-
-        for i in range(len(Config.FORWARD_TO_CHAT_ID)):
-            try:
-                if is_reply_message:
-                    if msg.edit_date:
-                        msg_id = await get_edited_message_map(msg.message_id)
-                        if msg_id and msg_id[0]:
-                            await client.edit_message_text(chat_id=Config.FORWARD_TO_CHAT_ID[i], message_id=msg_id[0], text=msg.text)
-                    else:
-                        msg_id = await get_message_map(msg.reply_to_message.message_id)
-                        if msg_id and msg_id[0]:
-                            sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message, reply_to_message_id=msg_id[0])
-                            if sent:
-                                await add_edited_message_map(msg.message_id, sent.message_id)
-                        else:
-                            logger.info("Reply ID Not Found.")
-                    return
-                # Check if we added this message recently
-                msg_hash = sha1(msg.text.encode("utf-8")).hexdigest()
-                msg_added = await message_hash_exist(msg_hash)
-                if msg_added:
-                    logger.info("Already added.")
-                    return
-                sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[i], text=new_message)
-                if sent:
-                    await add_message_map(msg.message_id, sent.message_id)
-                    await add_message_hash(msg_hash)
-                    logger.info("Message Sent.")
+        try:
+            if is_reply_message:
+                if msg.edit_date:
+                    msg_id = await get_edited_message_map(msg.message_id)
+                    if msg_id and msg_id[0]:
+                        await client.edit_message_text(chat_id=Config.FORWARD_TO_CHAT_ID[0], message_id=msg_id[0], text=msg.text)
                 else:
-                    logger.info("Message Not Sent.")
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")
-                await asyncio.sleep(Config.SLEEP_TIME)
-                await ContentGenerator(client, msg)
-            except Exception as err:
-                await client.send_message(chat_id="me", text=f"#Error: `{err}`\n\nUnable to Send Message to `{str(Config.FORWARD_TO_CHAT_ID[i])}`")
+                    msg_id = await get_message_map(msg.reply_to_message.message_id)
+                    if msg_id and msg_id[0]:
+                        sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[0], text=new_message, reply_to_message_id=msg_id[0])
+                        if sent:
+                            await add_edited_message_map(msg.message_id, sent.message_id)
+                    else:
+                        logger.info("Reply ID Not Found.")
+                return
+            # Check if we added this message recently
+            msg_hash = sha1(msg.text.encode("utf-8")).hexdigest()
+            msg_exist = await is_message_exist(msg_hash)
+            if msg_exist:
+                logger.info("Already added.")
+                return
+            sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[0], text=new_message)
+            if sent:
+                await add_message_map(msg.message_id,
+                                      sent.message_id,
+                                      msg_hash)
+                logger.info("Message Sent.")
+        except FloodWait as e:
+            await asyncio.sleep(e.x)
+            await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")
+            await asyncio.sleep(Config.SLEEP_TIME)
+            await ContentGenerator(client, msg)
+        except Exception as err:
+            await client.send_message(chat_id="me", text=f"#Error: `{err}`\n\nUnable to Send Message to `{str(Config.FORWARD_TO_CHAT_ID[0])}`")
     except Exception as err:
         await client.send_message(chat_id="me", text=f"#ERROR: `{err}`")
