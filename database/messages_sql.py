@@ -11,7 +11,6 @@ class MessageIdMap(BASE):
     __tablename__ = "message_id_map"
     source_id = Column(BigInteger, primary_key=True)
     destination_id = Column(BigInteger, unique=True)
-    msg_hash = Column(String(40), unique=True)
     created_time = Column(DateTime, server_default=func.now())
 
 
@@ -39,18 +38,11 @@ async def get_message_map(msg_source_id):
         SESSION.close()
 
 
-async def add_message_map(msg_source_id, msg_destination_id, _hash):
+async def add_message_map(msg_source_id, msg_destination_id):
     try:
-        exist = SESSION.query(MessageIdMap.msg_hash).filter_by(
-            msg_hash=_hash).first()
-
-        if exist:
-            return exist
-
         message_map = MessageIdMap()
         message_map.source_id = msg_source_id
         message_map.destination_id = msg_destination_id
-        message_map.msg_hash = _hash
         SESSION.add(message_map)
         SESSION.commit()
 
@@ -61,17 +53,6 @@ async def add_message_map(msg_source_id, msg_destination_id, _hash):
             MessageIdMap.created_time <= limit).delete()
         SESSION.commit()
 
-    except:
-        SESSION.rollback()
-        raise
-    finally:
-        SESSION.close()
-
-
-async def is_message_exist(_hash):
-    try:
-        return SESSION.query(MessageIdMap.msg_hash).filter_by(
-            msg_hash=_hash).first()
     except:
         SESSION.rollback()
         raise

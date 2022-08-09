@@ -9,9 +9,11 @@ from pyrogram.errors import FloodWait
 from helpers.filters import FilterMessage
 from helpers.file_size_checker import CheckFileSize
 from helpers.block_exts_handler import CheckBlockedExt
-from database.messages_sql import add_edited_message_map, get_edited_message_map, get_message_map, add_message_map, is_message_exist
+from database.messages_sql import add_edited_message_map, get_edited_message_map, get_message_map, add_message_map
 
 logger = logging.getLogger(__name__)
+
+current_hashes = []
 
 
 async def ContentGenerator(client: Client, msg: Message):
@@ -19,17 +21,17 @@ async def ContentGenerator(client: Client, msg: Message):
         ## --- Check 1 --- ##
         can_forward = await FilterMessage(message=msg)
         if can_forward == 400:
-            logger.info("FilterMessage not passed.")
+            logger.warn("FilterMessage not passed.")
             return
         ## --- Check 2 --- ##
         has_blocked_ext = await CheckBlockedExt(event=msg)
         if has_blocked_ext is True:
-            logger.info("CheckBlockedExt not passed.")
+            logger.warn("CheckBlockedExt not passed.")
             return
         ## --- Check 3 --- ##
         file_size_passed = await CheckFileSize(msg=msg)
         if file_size_passed is False:
-            logger.info("CheckFileSize not passed.")
+            logger.warn("CheckFileSize not passed.")
             return
         is_reply_message = False
         ## --- Check 4 --- ##
@@ -76,10 +78,10 @@ async def ContentGenerator(client: Client, msg: Message):
                 new_message = reply_match.group(1)
                 is_reply_message = True
             else:
-                logger.info("Reply pattern failed.")
+                logger.warn("Reply pattern failed.")
                 return
         else:
-            logger.info("Not related message.")
+            logger.warn("Not related message.")
             return
 
         try:
@@ -95,20 +97,20 @@ async def ContentGenerator(client: Client, msg: Message):
                         if sent:
                             await add_edited_message_map(msg.message_id, sent.message_id)
                     else:
-                        logger.info("Reply ID Not Found.")
+                        logger.warn("Reply ID Not Found.")
                 return
             # Check if we added this message recently
-            msg_hash = sha1(msg.text.encode("utf-8")).hexdigest()
-            msg_exist = await is_message_exist(msg_hash)
-            if msg_exist:
-                logger.info("Already added.")
+            msg_hash = sha1(new_message.encode("utf-8")).hexdigest()
+            if msg_hash in current_hashes:
+                logger.warn("Already added.")
                 return
+
+            current_hashes.append(msg_hash)
             sent = await client.send_message(chat_id=Config.FORWARD_TO_CHAT_ID[0], text=new_message)
             if sent:
-                await add_message_map(msg.message_id,
-                                      sent.message_id,
-                                      msg_hash)
-                logger.info("Message Sent.")
+                await add_message_map(msg.message_id, sent.message_id)
+                current_hashes.remove(msg_hash)
+                logger.warn("Message Sent.")
         except FloodWait as e:
             await asyncio.sleep(e.x)
             await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")

@@ -62,6 +62,7 @@ async def main(client: Client, message: Message):
             return
     elif message.chat.id in Config.FORWARD_FROM_CHAT_ID:
         # Check if the message exist for atleast two seconds
+        await asyncio.sleep(1)
         await ContentGenerator(client, message)
 
 # Run User Bot
