@@ -70,6 +70,8 @@ if __name__ == "__main__":
     try:
         User.start()
     except (ApiIdInvalid, ApiIdPublishedFlood):
+        User.send_message(
+            chat_id="me", text="Your API_ID/API_HASH is not valid.")
         raise Exception("Your API_ID/API_HASH is not valid.")
     except:
         print("Exeption: Cannot run app")
@@ -79,3 +81,5 @@ if __name__ == "__main__":
     idle()
     User.stop()
     print("Bot stopped!")
+    User.send_message(
+        chat_id="me", text="Bot stopped!")
