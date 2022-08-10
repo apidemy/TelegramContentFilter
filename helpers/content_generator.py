@@ -52,8 +52,6 @@ async def ContentGenerator(client: Client, msg: Message):
             direction_symbol = " 🟢" if signal_match.group(
                 2) == "LONG" else " 🔴"
             leverage = signal_match.group(3)
-            if "Cross 20x" in leverage:
-                leverage = "Leverage : Cross 5x"
             new_message = "💸📡Futures Scalping📡💸\n\n"\
                 "Coin : " + signal_match.group(1) + \
                 "\nDirection : " + signal_match.group(2) + direction_symbol + \
