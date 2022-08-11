@@ -9,20 +9,20 @@ class Config(object):
     # Get This From @StringSessionGen_Bot
     STRING_SESSION = os.environ.get("STRING_SESSION")
     # Forward From Chat ID
-    FORWARD_FROM_CHAT_ID = list(
+    SOURCE_CHAT_ID = list(
         set(int(x) for x in os.environ.get("FORWARD_FROM_CHAT_ID", "-100").split()))
     # Forward To Chat ID
-    FORWARD_TO_CHAT_ID = list(
+    DESTINATION_CHAT_ID = list(
         set(int(x) for x in os.environ.get("FORWARD_TO_CHAT_ID", "-100").split()))
-    # Filters for Forwards
-    DEFAULT_FILTERS = "video document photo audio text gif forwarded poll sticker"
-    FORWARD_FILTERS = list(set(x for x in os.environ.get(
-        "FORWARD_FILTERS", DEFAULT_FILTERS).split()))
-    BLOCKED_EXTENSIONS = list(
-        set(x for x in os.environ.get("BLOCKED_EXTENSIONS", "").split()))
-    MINIMUM_FILE_SIZE = os.environ.get("MINIMUM_FILE_SIZE", None)
-    BLOCK_FILES_WITHOUT_EXTENSIONS = bool(
-        os.environ.get("BLOCK_FILES_WITHOUT_EXTENSIONS", False))
+    # A regex to extract new message text
+    NEW_MESSAGE_PATTERN = '(?s).*\.\.\.\s([A-Za-z0-9]+)\s\.\.\.(?s).*𝓓𝓲𝓻𝓮𝓬𝓽𝓲𝓸𝓷\s:\s(SHORT|LONG)' \
+        '(?s).*(Leverage\s:\s\w+\s\d+x)' \
+        '(?s).*(Entry\s:\s\d+\.?\d*\s-\s\d+\.?\d*)' \
+        '(?s).*(.Stoploss\s:\s\d+\.?\d*.)'\
+        '(?s).*'
+
+    # Regex to extract reply message
+    REPLY_MESSAGE_PATTERN = '([\w\s,]+\\n#[A-Za-z0-9]+/USDT(?s).*)'
     # Forward as Copy. Value Should be True or False
     FORWARD_AS_COPY = bool(os.environ.get("FORWARD_AS_COPY", True))
     # Sleep Time while Kang

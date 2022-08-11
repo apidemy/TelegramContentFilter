@@ -25,18 +25,18 @@ async def ForwardMessage(client: Client, msg: Message):
         # Set a delay
         await asyncio.sleep(5)
         ## --- Check 4 --- ##
-        for i in range(len(Config.FORWARD_TO_CHAT_ID)):
+        for i in range(len(Config.DESTINATION_CHAT_ID)):
             try:
                 if Config.FORWARD_AS_COPY is True:
-                    await msg.copy(Config.FORWARD_TO_CHAT_ID[i])
+                    await msg.copy(Config.DESTINATION_CHAT_ID[i])
                 else:
-                    await msg.forward(Config.FORWARD_TO_CHAT_ID[i])
+                    await msg.forward(Config.DESTINATION_CHAT_ID[i])
             except FloodWait as e:
                 await asyncio.sleep(e.x)
                 await client.send_message(chat_id="me", text=f"#FloodWait: Stopped Forwarder for `{e.x}s`!")
                 await asyncio.sleep(Config.SLEEP_TIME)
                 await ForwardMessage(client, msg)
             except Exception as err:
-                await client.send_message(chat_id="me", text=f"#ERROR: `{err}`\n\nUnable to Forward Message to `{str(Config.FORWARD_TO_CHAT_ID[i])}`")
+                await client.send_message(chat_id="me", text=f"#ERROR: `{err}`\n\nUnable to Forward Message to `{str(Config.DESTINATION_CHAT_ID[i])}`")
     except Exception as err:
         await client.send_message(chat_id="me", text=f"#ERROR: `{err}`")
