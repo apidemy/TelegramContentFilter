@@ -1,11 +1,11 @@
 import re
 import asyncio
 import logging
+import helpers.globals as globals
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
 from configs import Config
-from database.messages_sql import add_edited_message_map, get_edited_message_map, get_message_map
 
 
 logger = logging.getLogger(__name__)
@@ -24,15 +24,17 @@ async def handle_edited_message(client: Client, msg: Message):
             return
 
         if msg.edit_date:
-            msg_id = await get_edited_message_map(msg.message_id)
-            if msg_id and msg_id[0]:
-                await client.edit_message_text(chat_id=Config.DESTINATION_CHAT_ID[0], message_id=msg_id[0], text=msg.text)
+            if msg.message_id in globals.edited_message_map.keys():
+                msg_id = globals.edited_message_map[msg.message_id]
+            if msg_id:
+                await client.edit_message_text(chat_id=Config.DESTINATION_CHAT_ID[0], message_id=msg_id, text=msg.text)
         else:
-            msg_id = await get_message_map(msg.reply_to_message.message_id)
-            if msg_id and msg_id[0]:
-                sent = await client.send_message(chat_id=Config.DESTINATION_CHAT_ID[0], text=new_message, reply_to_message_id=msg_id[0])
+            if msg.reply_to_message.message_id in globals.messages_map_id.keys():
+                msg_id = globals.messages_map_id[msg.reply_to_message.message_id]
+            if msg_id:
+                sent = await client.send_message(chat_id=Config.DESTINATION_CHAT_ID[0], text=new_message, reply_to_message_id=msg_id)
                 if sent:
-                    await add_edited_message_map(msg.message_id, sent.message_id)
+                    globals.edited_message_map[msg.message_id] = sent.message_id
             else:
                 logger.warn("Reply ID Not Found.")
 

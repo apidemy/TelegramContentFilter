@@ -1,5 +1,6 @@
 import logging
 from configs import Config
+import helpers.globals as globals
 from pyrogram import Client, idle
 from pyrogram.errors import ApiIdInvalid, ApiIdPublishedFlood
 
@@ -23,6 +24,7 @@ if __name__ == "__main__":
         raise
     uname = User.get_me().username
     print(f"@{uname} Started Successfully!")
+    globals.initialize()
     idle()
     User.stop()
     print("Bot stopped!")
