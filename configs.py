@@ -10,10 +10,10 @@ class Config(object):
     STRING_SESSION = os.environ.get("STRING_SESSION")
     # Forward From Chat ID
     SOURCE_CHAT_ID = list(
-        set(int(x) for x in os.environ.get("FORWARD_FROM_CHAT_ID", "-100").split()))
+        set(int(x) for x in os.environ.get("SOURCE_CHAT_ID", "-100").split()))
     # Forward To Chat ID
     DESTINATION_CHAT_ID = list(
-        set(int(x) for x in os.environ.get("FORWARD_TO_CHAT_ID", "-100").split()))
+        set(int(x) for x in os.environ.get("DESTINATION_CHAT_ID", "-100").split()))
     # A regex to extract new message text. Replace with you own
     NEW_MESSAGE_PATTERN = '(?s).*\.\.\.\s([A-Za-z0-9]+)\s\.\.\.(?s).*𝓓𝓲𝓻𝓮𝓬𝓽𝓲𝓸𝓷\s:\s(SHORT|LONG)' \
         '(?s).*(Leverage\s:\s\w+\s\d+x)' \
