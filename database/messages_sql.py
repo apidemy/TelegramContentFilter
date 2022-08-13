@@ -17,14 +17,14 @@ class MessageIdMap(BASE):
 MessageIdMap.__table__.create(checkfirst=True)
 
 
-class EditedMessageIdMap(BASE):
-    """Model for edited message id(s) map from source channel to destination channel."""
-    __tablename__ = "edited_message_id_map"
+class ReplyMessageIdMap(BASE):
+    """Model for replied message id(s) map from source channel to destination channel."""
+    __tablename__ = "reply_message_id_map"
     source_id = Column(BigInteger, primary_key=True)
     destination_id = Column(BigInteger, unique=True)
 
 
-EditedMessageIdMap.__table__.create(checkfirst=True)
+ReplyMessageIdMap.__table__.create(checkfirst=True)
 
 
 async def get_message_map(msg_source_id):
@@ -60,9 +60,9 @@ async def add_message_map(msg_source_id, msg_destination_id):
         SESSION.close()
 
 
-async def add_edited_message_map(msg_source_id, msg_destination_id):
+async def add_reply_message_map(msg_source_id, msg_destination_id):
     try:
-        message_map = EditedMessageIdMap()
+        message_map = ReplyMessageIdMap()
         message_map.source_id = msg_source_id
         message_map.destination_id = msg_destination_id
         SESSION.add(message_map)
@@ -74,9 +74,9 @@ async def add_edited_message_map(msg_source_id, msg_destination_id):
         SESSION.close()
 
 
-async def get_edited_message_map(msg_source_id):
+async def get_reply_message_map(msg_source_id):
     try:
-        return SESSION.query(EditedMessageIdMap.destination_id).filter_by(
+        return SESSION.query(ReplyMessageIdMap.destination_id).filter_by(
             source_id=msg_source_id).first()
     except:
         SESSION.rollback()

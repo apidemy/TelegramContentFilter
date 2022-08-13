@@ -1,18 +1,17 @@
-
 import re
 import asyncio
 import logging
-from hashlib import sha1
 from configs import Config
 import helpers.globals as globals
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
+from database.messages_sql import add_message_map
 
 logger = logging.getLogger(__name__)
 
 
-@Client.on_message(filters.chat(Config.SOURCE_CHAT_ID) & filters.text & ~filters.edited)
+@Client.on_message(filters.chat(Config.SOURCE_CHAT_ID) & filters.text & ~filters.edited & ~filters.reply)
 async def handle_new_message(client: Client, msg: Message):
     try:
         # match variable contains a Match object.
@@ -47,18 +46,18 @@ async def handle_new_message(client: Client, msg: Message):
             logger.warn("Not a related message.")
             return
 
-        # Check if we added this message recently
-        msg_hash = sha1(new_message.encode("utf-8")).hexdigest()
-        if msg_hash in globals.current_hashes:
-            logger.warn("Already added.")
+        await asyncio.sleep(5)
+        logger.warn("Checking if exist....")
+        is_still_exist = await client.get_messages(msg.chat.id, msg.message_id)
+        if not is_still_exist.text:
+            logger.warn("Message has been removed or does not exist anymore.")
             return
 
-        globals.current_hashes.append(msg_hash)
-        sent = await client.send_message(chat_id=Config.DESTINATION_CHAT_ID[0], text=new_message)
-        if sent:
-            globals.messages_map_id[msg.message_id] = sent.message_id
-            globals.current_hashes.remove(msg_hash)
-            logger.warn("Message Sent.")
+        async with globals.lock_section:
+            sent = await client.send_message(chat_id=Config.DESTINATION_CHAT_ID[0], text=new_message)
+            if sent:
+                await add_message_map(msg.message_id, sent.message_id)
+                logger.warn("Message Sent.")
     except FloodWait as e:
         await asyncio.sleep(e.x)
         await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")
