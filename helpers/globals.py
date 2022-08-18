@@ -8,13 +8,11 @@ def initialize():
     global lock_section
     lock_section = asyncio.Lock()
 
-    # backup_message_id_thread()
-
-
-""" Save current message id(s) in a thread by interval """
+    backup_message_id_thread()
 
 
 def backup_message_id_thread():
+    """ Delete old message id(s) to reduce storage usage in a thread by interval """
     delete_old_rows()
-    interval = 3600  # 1 hour
-    threading.Timer(10, backup_message_id_thread).start()
+    interval = 3600 * 24 * 7  # 1 Week
+    threading.Timer(interval, backup_message_id_thread).start()

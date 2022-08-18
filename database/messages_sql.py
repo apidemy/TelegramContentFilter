@@ -22,6 +22,7 @@ class ReplyMessageIdMap(BASE):
     __tablename__ = "reply_message_id_map"
     source_id = Column(BigInteger, primary_key=True)
     destination_ids = Column(String(64))
+    created_time = Column(DateTime, server_default=func.now())
 
 
 ReplyMessageIdMap.__table__.create(checkfirst=True)
@@ -92,14 +93,11 @@ async def get_reply_message_map(msg_source_id):
         SESSION.close()
 
 
-async def delete_old_rows():
+def delete_old_rows():
     try:
         # Deletes old rows more than number of days
         expiration_days = 30
         limit = datetime.datetime.utcnow() - datetime.timedelta(days=expiration_days)
-
-        print("deleted:  " + str(limit))
-        return
 
         # Message map table
         SESSION.query(MessageIdMap).filter(
