@@ -1,7 +1,8 @@
-import re
+import json
 import asyncio
 import logging
 import helpers.globals as globals
+from helpers.utils import parse_reply_signal_message, not_sent_channels
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
@@ -17,11 +18,9 @@ logger = logging.getLogger(__name__)
 @Client.on_message(filters.chat(Config.SOURCE_CHAT_ID) & filters.text & (filters.reply | filters.edited))
 async def handle_reply_message(client: Client, msg: Message):
     try:
-        reply_match = re.search(Config.REPLY_MESSAGE_PATTERN, msg.text)
-        if reply_match:
-            new_message = reply_match.group(1)
-        else:
-            logger.warn("Reply pattern failed.")
+        reply_message = parse_reply_signal_message(msg.text)
+        if reply_message is None:
+            logger.warn("Reply pattern not matched.")
             return
 
         await asyncio.sleep(5)
@@ -34,18 +33,30 @@ async def handle_reply_message(client: Client, msg: Message):
         msg_id = None
 
         async with globals.lock_section:
+            json_reply_sent_ids = {}
+            last_sent_ids = None
             if msg.edit_date:
-                msg_id = await get_reply_message_map(msg.message_id)
-                if msg_id and msg_id[0]:
-                    await client.edit_message_text(chat_id=Config.DESTINATION_CHAT_ID[0], message_id=msg_id[0], text=msg.text)
+                last_sent_ids = await get_reply_message_map(msg.message_id)
             else:
-                msg_id = await get_message_map(msg.reply_to_message.message_id)
-                if msg_id and msg_id[0]:
-                    sent = await client.send_message(chat_id=Config.DESTINATION_CHAT_ID[0], text=new_message, reply_to_message_id=msg_id[0])
-                    if sent:
-                        await add_reply_message_map(msg.message_id, sent.message_id)
-                else:
-                    logger.warn("Reply ID Not Found.")
+                last_sent_ids = await get_message_map(msg.reply_to_message.message_id)
+
+            channel_list, json_last_sent_ids = not_sent_channels(last_sent_ids)
+            if len(json_last_sent_ids) == 0:
+                return  # No source message found
+            for channel_id in json_last_sent_ids:
+                await asyncio.sleep(2)
+                message_id = json_last_sent_ids[channel_id]
+                if msg.edit_date:
+                    await client.edit_message_text(chat_id=channel_id, message_id=message_id, text=reply_message)
+                    continue
+                sent = await client.send_message(chat_id=channel_id, text=reply_message, reply_to_message_id=message_id)
+                if sent:
+                    json_reply_sent_ids[str(channel_id)] = sent.message_id
+
+            if len(json_reply_sent_ids) > 0:
+                await add_reply_message_map(msg.message_id, json.dumps(json_reply_sent_ids))
+            elif msg.edit_date is None:
+                logger.warn("Reply ID Not Found.")
 
     except FloodWait as e:
         await asyncio.sleep(e.x)

@@ -1,12 +1,13 @@
-import re
+import json
 import asyncio
 import logging
 from configs import Config
 import helpers.globals as globals
+from helpers.utils import parse_signal_message, not_sent_channels
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from pyrogram.errors import FloodWait
-from database.messages_sql import add_message_map
+from database.messages_sql import add_message_map, get_message_map, update_message_map
 
 logger = logging.getLogger(__name__)
 
@@ -15,34 +16,8 @@ logger = logging.getLogger(__name__)
 async def handle_new_message(client: Client, msg: Message):
     try:
         # match variable contains a Match object.
-        signal_match = re.search(Config.NEW_MESSAGE_PATTERN, msg.text)
-        if signal_match:
-            ## --- Check 5 --- ##
-            targets_pattern = '(Target\s\d\s-\s\d+\.?\d*)'
-            targets = re.findall(targets_pattern, msg.text)
-            if len(targets) == 0:
-                return  # No targets found
-            direction_symbol = " 🟢" if signal_match.group(
-                2) == "LONG" else " 🔴"
-            leverage = signal_match.group(3)
-            new_message = "💸📡Futures Scalping📡💸\n\n"\
-                "Coin : " + signal_match.group(1) + \
-                "\nDirection : " + signal_match.group(2) + direction_symbol + \
-                "\n" + leverage + \
-                "\n" + signal_match.group(4) + \
-                "\n\n" + signal_match.group(5) + \
-                "\n\n SCALPING " \
-                "\n" + targets[0] + \
-                "\n" + targets[1] + \
-                "\n" + targets[2] + \
-                "\n⚠️ DAY TRADING ⚠️" \
-                "\n" + targets[3] + \
-                "\n" + targets[4] + \
-                "\n" + targets[5] + \
-                "\n⚠️⚠️ SWING TRADING ⚠️⚠️" \
-                "\n" + targets[6] + \
-                "\n" + targets[7]
-        else:
+        new_message = parse_signal_message(msg.text)
+        if new_message is None:
             logger.warn("Not a related message.")
             return
 
@@ -54,10 +29,19 @@ async def handle_new_message(client: Client, msg: Message):
             return
 
         async with globals.lock_section:
-            sent = await client.send_message(chat_id=Config.DESTINATION_CHAT_ID[0], text=new_message)
-            if sent:
-                await add_message_map(msg.message_id, sent.message_id)
-                logger.warn("Message Sent.")
+            last_sent_ids = await get_message_map(msg.message_id)
+            channel_list, json_last_sent_ids = not_sent_channels(last_sent_ids)
+            is_update = len(json_last_sent_ids) > 0
+            for channel_id in channel_list:
+                sent = await client.send_message(chat_id=channel_id, text=new_message)
+                if sent:
+                    json_last_sent_ids[str(channel_id)] = sent.message_id
+                    logger.warn("Message Sent to channel: " + str(channel_id))
+                await asyncio.sleep(2)
+            if is_update and len(channel_list) > 0:
+                await update_message_map(msg.message_id, json.dumps(json_last_sent_ids))
+            else:
+                await add_message_map(msg.message_id, json.dumps(json_last_sent_ids))
     except FloodWait as e:
         await asyncio.sleep(e.x)
         await client.send_message(chat_id="me", text=f"#FloodWait: Stopped ContentGenerator for `{e.x}s`!")
