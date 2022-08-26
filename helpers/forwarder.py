@@ -1,42 +1,33 @@
+from random import randint
 import asyncio
+import logging
 from configs import Config
 from pyrogram import Client
-from pyrogram.types import Message
 from pyrogram.errors import FloodWait
-from helpers.filters import FilterMessage
-from helpers.file_size_checker import CheckFileSize
-from helpers.block_exts_handler import CheckBlockedExt
+
+logger = logging.getLogger(__name__)
+
+"""Watch for specific messages using a pattern and forward to specific channel"""
 
 
-async def ForwardMessage(client: Client, msg: Message):
+async def ForwardMessage(client: Client, message_id):
     try:
-        ## --- Check 1 --- ##
-        can_forward = await FilterMessage(message=msg)
-        if can_forward == 400:
-            return 400
-        ## --- Check 2 --- ##
-        has_blocked_ext = await CheckBlockedExt(event=msg)
-        if has_blocked_ext is True:
-            return 400
-        ## --- Check 3 --- ##
-        file_size_passed = await CheckFileSize(msg=msg)
-        if file_size_passed is False:
-            return 400
+        if Config.FORWARD_TO_CHAT_ID is None or Config.FORWARD_FROM_CHAT_ID is None:
+            return
+
+        is_exist = await client.get_messages(Config.FORWARD_FROM_CHAT_ID, message_id)
+        if not is_exist.text:
+            logger.warn("No message found for forwarding.")
+            return
+
         # Set a delay
-        await asyncio.sleep(5)
-        ## --- Check 4 --- ##
-        for i in range(len(Config.DESTINATION_CHAT_ID)):
-            try:
-                if Config.FORWARD_AS_COPY is True:
-                    await msg.copy(Config.DESTINATION_CHAT_ID[i])
-                else:
-                    await msg.forward(Config.DESTINATION_CHAT_ID[i])
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                await client.send_message(chat_id="me", text=f"#FloodWait: Stopped Forwarder for `{e.x}s`!")
-                await asyncio.sleep(Config.SLEEP_TIME)
-                await ForwardMessage(client, msg)
-            except Exception as err:
-                await client.send_message(chat_id="me", text=f"#ERROR: `{err}`\n\nUnable to Forward Message to `{str(Config.DESTINATION_CHAT_ID[i])}`")
+        await asyncio.sleep(randint(20, 50))
+        await client.forward_messages(chat_id=Config.FORWARD_TO_CHAT_ID, from_chat_id=Config.FORWARD_FROM_CHAT_ID, message_ids=message_id)
+
+    except FloodWait as e:
+        await asyncio.sleep(e.x)
+        await client.send_message(chat_id="me", text=f"#FloodWait: Stopped Forwarder for `{e.x}s`!")
+        await asyncio.sleep(Config.SLEEP_TIME)
+        await ForwardMessage(client, message_id)
     except Exception as err:
-        await client.send_message(chat_id="me", text=f"#ERROR: `{err}`")
+        await client.send_message(chat_id="me", text=f"#ERROR: `{err}`\n\nUnable to Forward Message to `{str(Config.DESTINATION_CHAT_ID)}`")

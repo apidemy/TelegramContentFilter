@@ -13,10 +13,10 @@
     "success_url": "https://t.me/Discovery_Updates",
     "env": {
         "API_ID": {
-            "description": "Get this value from my.telegram.org or @TeleORG_Bot"
+            "description": "Get this value from my.telegram.org"
         },
         "API_HASH": {
-            "description": "Get this value from my.telegram.org or @TeleORG_Bot"
+            "description": "Get this value from my.telegram.org"
         },
         "STRING_SESSION": {
             "description": "Get this from @FuturesScalpBot"
@@ -33,8 +33,12 @@
         "HEROKU_APP_NAME": {
             "description": "Your Heroku App Name."
         },
-        "FORWARD_AS_COPY": {
-            "description": "Forward Messages as Copy or with Forward Tag. Value should be True/False.",
+        "FORWARD_FROM_CHAT_ID": {
+            "description": "Source channel to watch for incomming message to be forwarded.",
+            "required": false
+        },
+        "FORWARD_TO_CHAT_ID": {
+            "description": "Destination channel that forward message is goint go to be sent.",
             "required": false
         }
     },

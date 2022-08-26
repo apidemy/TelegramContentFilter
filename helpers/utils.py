@@ -59,7 +59,7 @@ def parse_reply_signal_message(message_text):
 
 
 def not_sent_channels(last_sent_ids):
-    """Returns channels that doesn't has current message"""
+    """Returns channels that don't have current message"""
     channels = []
     if last_sent_ids is None:
         return Config.DESTINATION_CHAT_ID, {}
