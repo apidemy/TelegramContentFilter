@@ -65,6 +65,9 @@ async def handle_reply_message(client: Client, msg: Message):
         # Forward message if needed
         if Config.FORWARD_TO_CHAT_ID and Config.FORWARD_FROM_CHAT_ID and forward_id:
             await ForwardMessage(client, forward_id)
+        else:
+            logger.warn("Cannot Forward.", str(Config.FORWARD_FROM_CHAT_ID), str(
+                Config.FORWARD_TO_CHAT_ID), str(forward_id))
 
     except FloodWait as e:
         await asyncio.sleep(e.x)

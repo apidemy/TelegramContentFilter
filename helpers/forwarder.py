@@ -15,14 +15,18 @@ async def ForwardMessage(client: Client, message_id):
         if Config.FORWARD_TO_CHAT_ID is None or Config.FORWARD_FROM_CHAT_ID is None:
             return
 
+        logger.warn("Check forwarding.")
+
         is_exist = await client.get_messages(Config.FORWARD_FROM_CHAT_ID, message_id)
         if not is_exist.text:
             logger.warn("No message found for forwarding.")
             return
 
         # Set a delay
-        await asyncio.sleep(randint(20, 50))
-        await client.forward_messages(chat_id=Config.FORWARD_TO_CHAT_ID, from_chat_id=Config.FORWARD_FROM_CHAT_ID, message_ids=message_id)
+        await asyncio.sleep(randint(10, 20))
+        sent = await client.forward_messages(chat_id=Config.FORWARD_TO_CHAT_ID, from_chat_id=Config.FORWARD_FROM_CHAT_ID, message_ids=message_id)
+        if sent:
+            logger.warn("Message Forwarded.")
 
     except FloodWait as e:
         await asyncio.sleep(e.x)
