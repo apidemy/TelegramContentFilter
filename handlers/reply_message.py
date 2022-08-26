@@ -31,7 +31,7 @@ async def handle_reply_message(client: Client, msg: Message):
             logger.warn("Message has been removed or does not exist anymore.")
             return
 
-        forward_id = None  # Holds one of sent reply message id for forwarding
+        forward_id = 0  # Holds one of sent reply message id for forwarding
 
         async with globals.lock_section:
             json_reply_sent_ids = {}
@@ -54,7 +54,7 @@ async def handle_reply_message(client: Client, msg: Message):
                 sent = await client.send_message(chat_id=channel_id, text=reply_message, reply_to_message_id=message_id)
                 if sent:
                     json_reply_sent_ids[str(channel_id)] = sent.message_id
-                    if channel_id == Config.FORWARD_FROM_CHAT_ID:
+                    if int(channel_id) == Config.FORWARD_FROM_CHAT_ID:
                         forward_id = sent.message_id
 
             if len(json_reply_sent_ids) > 0:
