@@ -53,7 +53,7 @@ async def handle_reply_message(client: Client, msg: Message):
                     continue
                 sent = await client.send_message(chat_id=channel_id, text=reply_message, reply_to_message_id=message_id)
                 if sent:
-                    json_reply_sent_ids[channel_id] = sent.message_id
+                    json_reply_sent_ids[str(channel_id)] = sent.message_id
                     if channel_id == Config.FORWARD_FROM_CHAT_ID:
                         forward_id = sent.message_id
 

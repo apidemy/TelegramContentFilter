@@ -15,4 +15,6 @@ def backup_message_id_thread():
     """ Delete old message id(s) to reduce storage usage in a thread by interval """
     delete_old_rows()
     interval = 3600 * 24 * 7  # 1 Week
-    threading.Timer(interval, backup_message_id_thread).start()
+    _thread = threading.Timer(interval, backup_message_id_thread)
+    _thread.setDaemon(True)
+    _thread.start()

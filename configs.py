@@ -25,9 +25,9 @@ class Config(object):
     REPLY_MESSAGE_PATTERN = '([\w\s,]+\\n#[A-Za-z0-9]+/USDT(?s).*)'
 
     # Channel source of forwarding to watch for message
-    FORWARD_FROM_CHAT_ID = os.environ.get("FORWARD_FROM_CHAT_ID", "")
+    FORWARD_FROM_CHAT_ID = int(os.environ.get("FORWARD_FROM_CHAT_ID", ""))
     # Channel destination that we send message to it
-    FORWARD_TO_CHAT_ID = os.environ.get("FORWARD_TO_CHAT_ID", "")
+    FORWARD_TO_CHAT_ID = int(os.environ.get("FORWARD_TO_CHAT_ID", ""))
     # Sleep Time while Kang
     SLEEP_TIME = int(os.environ.get("SLEEP_TIME", 10))
     DATABASE_URL = os.environ.get(
